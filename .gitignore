@@ -1,0 +1,12 @@
+# Executables i fitxers objecte
+*.exe
+*.o
+*.out
+
+# Fitxers de l'editor / entorn
+.vscode/
+.idea/
+
+# Documentacio de classe amb copyright
+*.pdf
+arbre.c
