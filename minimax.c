@@ -101,7 +101,12 @@ double avaluarCentre(char tauler[N][N]){ //com més al centre tirem la fitxa mé
     return puntuacio;
 }
 
-int avaluarFinestra(char c1, char c2, char c3, char c4, int *dobleamenacaO, int *dobleamenacaX){
+int teSuport(char tauler[N][N], int fila, int col){ //funció per saber si una fila es pot posar a una casella o si caurà mes avall per gravetat
+    if (fila==N-1) return 1;
+    return (tauler[fila+1][col]!='-');
+}
+
+int avaluarFinestra(char c1, char c2, char c3, char c4, int *dobleamenacaO, int *dobleamenacaX, int esImmediata){
     int o=0,x=0,buit=0;
     char finestra[4]={c1,c2,c3,c4};
     for (int k=0;k<4;k++){
@@ -113,17 +118,20 @@ int avaluarFinestra(char c1, char c2, char c3, char c4, int *dobleamenacaO, int 
     if (o>0 && x>0){
         return 0;
     }
-    // Fila favorable a la màquina ('O')
-    if (o==3 && buit==1) {
-        (*dobleamenacaO)++;
-        return 250;
+    if (o==3 && buit==1) {// Fila favorable a la màquina 
+        if (esImmediata){   
+            (*dobleamenacaO)++;
+            return 800;
+        }
+        return 150; //última casella no accessible en aquell moment
     }
     if (o==2 && buit==2) return 10;
-
-    // Fila favorable al jugador ('X') - amenaça que cal evitar
-    if (x==3 && buit==1) {
-        (*dobleamenacaX)++;
-        return -280;
+    if (x==3 && buit==1) {// Fila favorable al jugador
+        if (esImmediata){
+            (*dobleamenacaX)++;
+            return -800;
+        }
+        return -150; //última casella no accessible en aquell moment
     }
     if (x==2 && buit==2) return -10;
 
@@ -137,25 +145,37 @@ double avaluarLinies(char tauler[N][N]){
     // Horitzontal
     for (int i=0;i<N;i++){
         for (int j=0;j<N-3;j++){
-            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i][j+1], tauler[i][j+2], tauler[i][j+3], &dobleamenacaO, &dobleamenacaX);
+            int esImmediata=0;
+            for (int k=0;k<4;k++){
+                if (tauler[i][j+k]=='-' && teSuport(tauler, i, j+k)) esImmediata=1;
+            }
+            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i][j+1], tauler[i][j+2], tauler[i][j+3], &dobleamenacaO, &dobleamenacaX, esImmediata);
         }
     }
     // Vertical
     for (int i=0;i<N-3;i++){
         for (int j=0;j<N;j++){
-            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j], tauler[i+2][j], tauler[i+3][j], &dobleamenacaO, &dobleamenacaX);
+            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j], tauler[i+2][j], tauler[i+3][j], &dobleamenacaO, &dobleamenacaX, 1);
         }
     }
     // Diagonal dreta (descendent cap a la dreta)
     for (int i=0;i<N-3;i++){
         for (int j=0;j<N-3;j++){
-            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j+1], tauler[i+2][j+2], tauler[i+3][j+3], &dobleamenacaO, &dobleamenacaX);
+            int esImmediata=0;
+            for (int k=0;k<4;k++){
+                if (tauler[i+k][j+k]=='-' && teSuport(tauler, i+k, j+k)) esImmediata=1;
+            }
+            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j+1], tauler[i+2][j+2], tauler[i+3][j+3], &dobleamenacaO, &dobleamenacaX, esImmediata);
         }
     }
     // Diagonal esquerra (descendent cap a l'esquerra)
     for (int i=0;i<N-3;i++){
         for (int j=3;j<N;j++){
-            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j-1], tauler[i+2][j-2], tauler[i+3][j-3], &dobleamenacaO, &dobleamenacaX);
+            int esImmediata=0;
+            for (int k=0;k<4;k++){
+                if (tauler[i+k][j-k]=='-' && teSuport(tauler, i+k, j-k)) esImmediata=1;
+            }
+            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j-1], tauler[i+2][j-2], tauler[i+3][j-3], &dobleamenacaO, &dobleamenacaX, esImmediata);
         }
     }
     if (dobleamenacaO>=2) puntuacio+=5000;

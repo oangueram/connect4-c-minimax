@@ -106,7 +106,7 @@ int main(){
     int columna;
     int tiradaValida=0;
     int comencar;
-    printf("Qui tira primer?(1=Jugador, 2=Maquina)\n");
+    printf("Qui tira primer? (1=Jugador, 2=Maquina)\n");
     scanf("%i", &comencar);
     while(comencar!=1 && comencar!=2){
         printf("Opcio no valida, torna-ho a intentar.\n");
