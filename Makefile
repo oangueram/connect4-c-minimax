@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -O2
 TARGET = 4enratlla.exe
 SRCS = 4enratlla.c minimax.c
-HEADERS = minimax.h
+HEADERS = minimax.h 4enratlla.h
 
 all: $(TARGET)
 

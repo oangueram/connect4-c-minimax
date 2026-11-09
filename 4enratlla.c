@@ -102,10 +102,19 @@ int empat(char tauler[N][N]){ //tauler ple
 int main(){
     srand(time(NULL));
     char tauler[N][N];
-    char jugadorActual='X';
     int fiPartida=0;
     int columna;
     int tiradaValida=0;
+    int comencar;
+    printf("Qui tira primer?(1=Jugador, 2=Maquina)\n");
+    scanf("%i", &comencar);
+    while(comencar!=1 && comencar!=2){
+        printf("Opcio no valida, torna-ho a intentar.\n");
+        scanf("%i", &comencar);
+    }
+    char jugadorActual;
+    if (comencar==1) jugadorActual='X';
+    if (comencar==2) jugadorActual='O';
     inicialitzarTauler(tauler);
     while(!fiPartida){
         imprimirTauler(tauler);
