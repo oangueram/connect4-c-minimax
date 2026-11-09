@@ -21,12 +21,14 @@ int calcularNumeroDeFills(char tauler[N][N]){
 }
 
 int fillAColumna(char tauler[N][N], int numFill){
+    int ordre[N]={3, 4, 2, 5, 1, 6, 0, 7};
     int count=0;
-    for (int j=0;j<N;j++){
+    for (int k=0;k<N;k++){
+        int j=ordre[k];
         if (tauler[0][j]=='-'){
             if (numFill==count){
                 return j;
-        }
+            }
             else count++;
         }
     }
@@ -120,7 +122,7 @@ int avaluarFinestra(char c1, char c2, char c3, char c4, int *dobleamenacaO, int 
 
     // Fila favorable al jugador ('X') - amenaça que cal evitar
     if (x==3 && buit==1) {
-        (*dobleamenacaX++);
+        (*dobleamenacaX)++;
         return -280;
     }
     if (x==2 && buit==2) return -10;
@@ -156,8 +158,8 @@ double avaluarLinies(char tauler[N][N]){
             puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j-1], tauler[i+2][j-2], tauler[i+3][j-3], &dobleamenacaO, &dobleamenacaX);
         }
     }
-    if(dobleamenaçaO>=2) puntuacio+=5000;
-    if (dobleamenaçaX>=2) puntuacio-=5000;
+    if (dobleamenacaO>=2) puntuacio+=5000;
+    if (dobleamenacaX>=2) puntuacio-=5000;
     return puntuacio;
 }
 
