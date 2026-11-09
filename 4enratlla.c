@@ -7,7 +7,7 @@
 #define COLOR_GROC    "\033[1;33m"   // O 
 #define COLOR_RESET   "\033[0m"      
 
-#define PROFUNDITAT 4
+#define PROFUNDITAT 8
 
 void inicialitzarTauler(char tauler[N][N]){
     for(int i=0;i<N;i++){

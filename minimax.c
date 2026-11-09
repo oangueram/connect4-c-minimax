@@ -51,7 +51,7 @@ Node *creaNode(Node *pare, int numFill, int nivell, int profunditat_max) {
 	//3.Crear l'array de fills si n'ha de tenir
 	else if (nivell<profunditat_max) {
 		p->n_fills=calcularNumeroDeFills(p->tauler);
-		p->fills=malloc(p->n_fills * sizeof(Node *));
+		p->fills=NULL; //com nomes creem fills de un en un i els esborrem a l'instant no es cal fer un malloc de n fills
 	}
 	else {
 		p->n_fills=0;
@@ -59,7 +59,7 @@ Node *creaNode(Node *pare, int numFill, int nivell, int profunditat_max) {
 	}
 	return p;
 }
-
+/* Funcions usades abans d'introduir la poda Alfa-Beta
 void creaFills(Node *pare, int nivell, int profunditat_max) { //crea fills, nets... fins a profunditat_max
 	for(int i=0;i<pare->n_fills;i++) {
 		pare->fills[i]=creaNode(pare, i, nivell, profunditat_max );
@@ -74,16 +74,11 @@ void creaArbre(Node *arrel, int profunditat_max){
     arrel->fills=malloc(arrel->n_fills * sizeof(Node *));
 	creaFills(arrel, 1, profunditat_max);	
 }
+*/
 
-void esborraArbre(Node *arrel){
+void esborraArbre(Node *arrel){ //com alliberem els fills just despres de crear-los nomes ens cal alliberar l'arrel
     if (arrel==NULL){
         return;
-    }
-    else if(arrel->fills!=NULL && arrel->n_fills>0){
-        for (int i=0; i<arrel->n_fills; i++){
-            esborraArbre(arrel->fills[i]);
-        }
-        free(arrel->fills);
     }
     free(arrel);
 }
@@ -164,32 +159,48 @@ double heuristica(char tauler[N][N], int nivell){
         return -1000000+nivell;
     }
     double puntuacio=0; 
-    //puntuacio+=avaluarCentre(tauler);
+    puntuacio+=avaluarCentre(tauler);
     puntuacio+=avaluarLinies(tauler);
     return puntuacio;
 }
 
-double avaluarMinimax(Node *node, int nivell){
-    if(node->fills==NULL){
+double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int profunditat_max){
+    if(node->n_fills==0){
         node->valor=heuristica(node->tauler, nivell);
         return node->valor;
     }
-    if (nivell % 2==0){
+    if (nivell % 2==0){ //torn màquina
         double millor=-2000000;
         for (int i=0;i<node->n_fills;i++){
-            double valor=avaluarMinimax(node->fills[i], nivell+1);
+            Node *fill=creaNode(node, i, nivell+1, profunditat_max);
+            double valor=avaluarMinimax(fill, nivell+1, alpha, beta, profunditat_max);
+            esborraArbre(fill);
             if(valor>millor){
                 millor=valor;
+            }
+            if(valor>alpha){
+                alpha=valor;
+            }
+            if(beta<alpha){//el rival té una millor opció, per tant no triarà aquesta branca
+                break;
             }
         }
         node->valor=millor;
     }
-    if (nivell % 2!=0){
+    if (nivell % 2!=0){ //torn rival
         double pitjor=2000000;
         for (int i=0;i<node->n_fills;i++){
-            double valor=avaluarMinimax(node->fills[i], nivell+1);
+            Node *fill=creaNode(node, i, nivell+1, profunditat_max);
+            double valor=avaluarMinimax(fill, nivell+1, alpha, beta, profunditat_max);
+            esborraArbre(fill);
             if(valor<pitjor){
                 pitjor=valor;
+            }
+            if (valor<beta){
+                beta=valor;
+            }
+            if (beta<alpha){//la maquina té una millor opció, per tant no triarà aquesta branca 
+                break;
             }
         }
         node->valor=pitjor;
@@ -200,36 +211,29 @@ double avaluarMinimax(Node *node, int nivell){
 int ferMinimax(char tauler[N][N], int profunditat_max){
     Node *arrel=malloc(sizeof(Node));
     copiarTauler(arrel->tauler, tauler);
-    creaArbre(arrel, profunditat_max);
-    avaluarMinimax(arrel, 0);
-    int millorsCandidats[N]; //en cas d'empat de valor entre candidats, l'escollirem aleatòriament (amb mateixa prob)
-    int numCandidats = 0;
-    for (int i = 0; i < arrel->n_fills; i++) {
-        if (arrel->fills[i]->valor == arrel->valor) {
-            millorsCandidats[numCandidats] = i;
-            numCandidats++;
+    arrel->n_fills=calcularNumeroDeFills(arrel->tauler);
+    double millor=-2000000;
+    double alpha=-2000000;
+    double beta=2000000; 
+    int millorsCandidats[N];
+    int numCandidats=0;
+    for (int i=0; i<arrel->n_fills; i++) {
+        Node *fill=creaNode(arrel, i, 1, profunditat_max);
+        double valor=avaluarMinimax(fill, 1, alpha, beta, profunditat_max);
+        esborraArbre(fill);
+        if(valor>millor){
+            millor=valor;
+            numCandidats=0;
+            millorsCandidats[numCandidats++]=fillAColumna(arrel->tauler, i);
+        }
+        else if(valor==millor){
+            millorsCandidats[numCandidats++]=fillAColumna(arrel->tauler, i);
+        }
+        if(valor>alpha){
+            alpha=valor;
         }
     }
-    int indexAleatori = rand() % numCandidats;
-    int millorFill = millorsCandidats[indexAleatori];
-    int millorColumna = fillAColumna(arrel->tauler, millorFill);
-    //Introdueixo el següent bloc per tapar posicions de victoria de l'humà encara que aquest ja hagi
-    //guanyat si juga perfecte. La màquina es "rendia" quan detectava que l'humà havia guanyat
-    //si jugava perfecte, limitant-se a llançar la fitxa a la primera columna (totes les columnes
-    //tenien el mateix valor de derrota). Amb aquest bloc, mantenim les possibilitats de guanyar de
-    //màquina si l'humà es despista i no aprofita l'oportunitat de victòria.
-    if (arrel->valor<=-900000) {
-            for (int j=0;j<N;j++) {
-                char taulerDerrota[N][N];
-                copiarTauler(taulerDerrota, tauler);
-                if (tirada(taulerDerrota, j, 'X')==1) {
-                    if (comprovarGuanyador(taulerDerrota, 'X')==1) {
-                        millorColumna=j;
-                        break;
-                    }
-                }
-            }
-        }
-    esborraArbre(arrel);
+    int millorColumna=millorsCandidats[rand()%numCandidats];
+    free(arrel);   
     return millorColumna;
 }
