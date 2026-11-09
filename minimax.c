@@ -99,7 +99,7 @@ double avaluarCentre(char tauler[N][N]){ //com més al centre tirem la fitxa mé
     return puntuacio;
 }
 
-int avaluarFinestra(char c1, char c2, char c3, char c4){
+int avaluarFinestra(char c1, char c2, char c3, char c4, int *dobleamenacaO, int *dobleamenacaX){
     int o=0,x=0,buit=0;
     char finestra[4]={c1,c2,c3,c4};
     for (int k=0;k<4;k++){
@@ -112,11 +112,17 @@ int avaluarFinestra(char c1, char c2, char c3, char c4){
         return 0;
     }
     // Fila favorable a la màquina ('O')
-    if (o==3 && buit==1) return 50;
+    if (o==3 && buit==1) {
+        (*dobleamenacaO)++;
+        return 250;
+    }
     if (o==2 && buit==2) return 10;
 
     // Fila favorable al jugador ('X') - amenaça que cal evitar
-    if (x==3 && buit==1) return -50;
+    if (x==3 && buit==1) {
+        (*dobleamenacaX++);
+        return -280;
+    }
     if (x==2 && buit==2) return -10;
 
     return 0;
@@ -124,30 +130,34 @@ int avaluarFinestra(char c1, char c2, char c3, char c4){
 
 double avaluarLinies(char tauler[N][N]){
     double puntuacio=0;
+    int dobleamenacaO=0;
+    int dobleamenacaX=0;
     // Horitzontal
     for (int i=0;i<N;i++){
         for (int j=0;j<N-3;j++){
-            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i][j+1], tauler[i][j+2], tauler[i][j+3]);
+            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i][j+1], tauler[i][j+2], tauler[i][j+3], &dobleamenacaO, &dobleamenacaX);
         }
     }
     // Vertical
     for (int i=0;i<N-3;i++){
         for (int j=0;j<N;j++){
-            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j], tauler[i+2][j], tauler[i+3][j]);
+            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j], tauler[i+2][j], tauler[i+3][j], &dobleamenacaO, &dobleamenacaX);
         }
     }
     // Diagonal dreta (descendent cap a la dreta)
     for (int i=0;i<N-3;i++){
         for (int j=0;j<N-3;j++){
-            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j+1], tauler[i+2][j+2], tauler[i+3][j+3]);
+            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j+1], tauler[i+2][j+2], tauler[i+3][j+3], &dobleamenacaO, &dobleamenacaX);
         }
     }
     // Diagonal esquerra (descendent cap a l'esquerra)
     for (int i=0;i<N-3;i++){
         for (int j=3;j<N;j++){
-            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j-1], tauler[i+2][j-2], tauler[i+3][j-3]);
+            puntuacio+=avaluarFinestra(tauler[i][j], tauler[i+1][j-1], tauler[i+2][j-2], tauler[i+3][j-3], &dobleamenacaO, &dobleamenacaX);
         }
     }
+    if(dobleamenaçaO>=2) puntuacio+=5000;
+    if (dobleamenaçaX>=2) puntuacio-=5000;
     return puntuacio;
 }
 
