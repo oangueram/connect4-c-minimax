@@ -24,6 +24,11 @@ typedef struct entradaTT{
     int tipus;
 } EntradaTT;
 
+typedef struct estadistiques{
+    long long int nodesExplorats;
+    long long int repetitsTT;
+} Estadistiques;
+
 void copiarTauler(char desti[N][N], char origen[N][N]);
 int calcularNumeroDeFills(char tauler[N][N]);
 int fillAColumna(char tauler[N][N], int numFill);
@@ -35,7 +40,7 @@ void esborraArbre(Node *arrel);
 
 double avaluarCentre(char tauler[N][N]);
 double heuristica(char tauler[N][N], int nivell);
-double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int profunditat_max);
+double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int profunditat_max, Estadistiques *stats);
 int ferMinimax(char tauler[N][N], int profunditat_max);
 
 void inicialitzarZobrist(void);

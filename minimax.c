@@ -1,8 +1,11 @@
- #include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include "minimax.h"
 
 uint64_t taulaZobrist[N][N][2]; //assignarem a les 128 possibles tirades (64 per jugador) un codi únic. L'ultima entrada de la matriu val 0 quan el jugador és X i 1 quan és O.
 EntradaTT taulaTransposicio[MIDA_TAULA]; //mida suficient per poder guardar tots els taulers de cada torn
+
 
 uint64_t rand64(){//funció per generar numeros aleatoris de 64 bits per associar a cada possible jugada (rand() només genera entre 15 i 31 bits)
     uint64_t r=0;
@@ -249,7 +252,8 @@ double heuristica(char tauler[N][N], int nivell){
     return puntuacio;
 }
 
-double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int profunditat_max){
+double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int profunditat_max, Estadistiques *stats){
+    stats->nodesExplorats++;
     if(node->n_fills==0){
         node->valor=heuristica(node->tauler, nivell);
         return node->valor;
@@ -264,14 +268,17 @@ double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int pro
     if (entrada.hash==node->hash && entrada.profunditat>=profunditatRestant){ //si el tauler ja havia estat calculat i amb la profunditat que necessitem
         if (entrada.tipus==TIPUS_EXACTE){ //si la branca no havia estat podada tenim el valor exacte del node
             node->valor=entrada.valor;
+            stats->repetitsTT++;
             return entrada.valor;
         }
         if(entrada.tipus==TIPUS_COTA_INFERIOR && entrada.valor>=beta){//si la branca havia estat podada perquè el rival tenia una jugada millor assegurada i si ara també té una jugada millor assegurada
             node->valor=entrada.valor;
+            stats->repetitsTT++;
             return entrada.valor; //tallem branca
         }
         if(entrada.tipus==TIPUS_COTA_SUPERIOR && entrada.valor<=alpha){//si el valor d'aquest node no supera l'alfa actual, la branca és inútil.
             node->valor=entrada.valor;
+            stats->repetitsTT++;
             return entrada.valor; //tallem branca
         }
     }
@@ -280,7 +287,7 @@ double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int pro
         double millor=-2000000;
         for (int i=0;i<node->n_fills;i++){
             Node *fill=creaNode(node, i, nivell+1, profunditat_max);
-            double valor=avaluarMinimax(fill, nivell+1, alpha, beta, profunditat_max);
+            double valor=avaluarMinimax(fill, nivell+1, alpha, beta, profunditat_max, stats);
             esborraArbre(fill);
             if(valor>millor){
                 millor=valor;
@@ -298,7 +305,7 @@ double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int pro
         double pitjor=2000000;
         for (int i=0;i<node->n_fills;i++){
             Node *fill=creaNode(node, i, nivell+1, profunditat_max);
-            double valor=avaluarMinimax(fill, nivell+1, alpha, beta, profunditat_max);
+            double valor=avaluarMinimax(fill, nivell+1, alpha, beta, profunditat_max, stats);
             esborraArbre(fill);
             if(valor<pitjor){
                 pitjor=valor;
@@ -332,6 +339,8 @@ double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int pro
 }
 
 int ferMinimax(char tauler[N][N], int profunditat_max){
+    Estadistiques stats={0, 0};
+    clock_t t_inici=clock();
     Node *arrel=malloc(sizeof(Node));
     copiarTauler(arrel->tauler, tauler);
     arrel->hash=calcularHashTauler(arrel->tauler);
@@ -343,7 +352,7 @@ int ferMinimax(char tauler[N][N], int profunditat_max){
     int numCandidats=0;
     for (int i=0; i<arrel->n_fills; i++) {
         Node *fill=creaNode(arrel, i, 1, profunditat_max);
-        double valor=avaluarMinimax(fill, 1, alpha, beta, profunditat_max);
+        double valor=avaluarMinimax(fill, 1, alpha, beta, profunditat_max, &stats);
         esborraArbre(fill);
         if(valor>millor){
             millor=valor;
@@ -358,6 +367,9 @@ int ferMinimax(char tauler[N][N], int profunditat_max){
         }
     }
     int millorColumna=millorsCandidats[rand()%numCandidats];
-    free(arrel);   
+    free(arrel);  
+    clock_t t_final=clock();
+    double temps=(double)(t_final-t_inici)/CLOCKS_PER_SEC;
+    printf("[PROFUNDITAT %i] TEMPS:%.3f | NODES EXPLORATS %lli | REUTILITZACIONS TT:%lli\n", profunditat_max, temps, stats.nodesExplorats, stats.repetitsTT); 
     return millorColumna;
 }
