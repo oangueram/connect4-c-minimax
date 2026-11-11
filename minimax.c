@@ -259,7 +259,8 @@ double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int pro
     int profunditatRestant=profunditat_max-nivell;
     uint64_t index=node->hash%MIDA_TAULA;
     EntradaTT entrada=taulaTransposicio[index];
-    double alpha_original=alpha; //guardem l'alpha original per saber el tipus al final
+    double alpha_original=alpha; //guardem l'alpha i beta originals per saber el tipus al final
+    double beta_original=beta;
     if (entrada.hash==node->hash && entrada.profunditat>=profunditatRestant){ //si el tauler ja havia estat calculat i amb la profunditat que necessitem
         if (entrada.tipus==TIPUS_EXACTE){ //si la branca no havia estat podada tenim el valor exacte del node
             node->valor=entrada.valor;
@@ -316,7 +317,7 @@ double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int pro
     if(node->valor<=alpha_original){
         tipus=TIPUS_COTA_SUPERIOR;
     }
-    else if(node->valor>=beta){
+    else if(node->valor>=beta_original){
         tipus=TIPUS_COTA_INFERIOR;
     }
     else tipus=TIPUS_EXACTE;
