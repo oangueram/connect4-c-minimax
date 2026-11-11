@@ -7,7 +7,7 @@
 #define COLOR_GROC    "\033[1;33m"   // O 
 #define COLOR_RESET   "\033[0m"      
 
-#define PROFUNDITAT 10
+#define PROFUNDITAT 12
 
 void inicialitzarTauler(char tauler[N][N]){
     for(int i=0;i<N;i++){
@@ -101,6 +101,7 @@ int empat(char tauler[N][N]){ //tauler ple
 
 int main(){
     srand(time(NULL));
+    inicialitzarZobrist();
     char tauler[N][N];
     int fiPartida=0;
     int columna;

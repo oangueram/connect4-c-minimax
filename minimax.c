@@ -1,6 +1,47 @@
  #include <stdlib.h>
 #include "minimax.h"
 
+uint64_t taulaZobrist[N][N][2]; //assignarem a les 128 possibles tirades (64 per jugador) un codi únic. L'ultima entrada de la matriu val 0 quan el jugador és X i 1 quan és O.
+EntradaTT taulaTransposicio[MIDA_TAULA]; //mida suficient per poder guardar tots els taulers de cada torn
+
+uint64_t rand64(){//funció per generar numeros aleatoris de 64 bits per associar a cada possible jugada (rand() només genera entre 15 i 31 bits)
+    uint64_t r=0;
+    for (int i=0; i<4;i++){
+        r=(r<<16)^(uint64_t)rand();
+    }
+    return r;
+}
+
+void inicialitzarZobrist(){
+    for (int i=0;i<N;i++){
+        for (int j=0;j<N;j++){
+            taulaZobrist[i][j][0]=rand64();
+            taulaZobrist[i][j][1]=rand64();
+        }
+    }
+    for (int i=0;i<MIDA_TAULA;i++){
+        taulaTransposicio[i].hash=0;
+        taulaTransposicio[i].profunditat=-1; //és buit
+        taulaTransposicio[i].tipus=0;
+        taulaTransposicio[i].valor=0;
+    }
+}
+
+uint64_t calcularHashTauler(char tauler[N][N]){
+    uint64_t h=0;
+    for (int i=0;i<N;i++){
+        for (int j=0;j<N;j++){
+            if (tauler[i][j]=='X'){
+                h^=taulaZobrist[i][j][0];
+            }
+            else if(tauler[i][j]=='O'){
+                h^=taulaZobrist[i][j][1];
+            }
+        }
+    }
+    return h;
+}
+
 void copiarTauler(char desti[N][N], char origen[N][N]) {
     for (int i=0;i<N;i++){
         for (int j=0;j<N;j++){
@@ -45,7 +86,19 @@ Node *creaNode(Node *pare, int numFill, int nivell, int profunditat_max) {
         fitxa='O';
     }
     else fitxa='X';
-    tirada(p->tauler, fillAColumna(p->tauler, numFill), fitxa);
+    int col=fillAColumna(p->tauler, numFill);
+    tirada(p->tauler, col, fitxa);
+    int fila=0;
+    for (int i=0;i<N;i++){
+        if (p->tauler[i][col]!='-'){
+            fila=i;
+            break;
+        }
+    }
+    int fitxaIndex;
+    if (fitxa=='O') fitxaIndex=1;
+    else fitxaIndex=0;
+    p->hash=pare->hash^taulaZobrist[fila][col][fitxaIndex];
     if (comprovarGuanyador(p->tauler, fitxa) == 1){
         p->n_fills=0;
         p->fills=NULL;
@@ -201,6 +254,27 @@ double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int pro
         node->valor=heuristica(node->tauler, nivell);
         return node->valor;
     }
+
+    //Primer consultem a la taula de transposició si el tauler actual ja ha estat consultat per estalviar càlculs
+    int profunditatRestant=profunditat_max-nivell;
+    uint64_t index=node->hash%MIDA_TAULA;
+    EntradaTT entrada=taulaTransposicio[index];
+    double alpha_original=alpha; //guardem l'alpha original per saber el tipus al final
+    if (entrada.hash==node->hash && entrada.profunditat>=profunditatRestant){ //si el tauler ja havia estat calculat i amb la profunditat que necessitem
+        if (entrada.tipus==TIPUS_EXACTE){ //si la branca no havia estat podada tenim el valor exacte del node
+            node->valor=entrada.valor;
+            return entrada.valor;
+        }
+        if(entrada.tipus==TIPUS_COTA_INFERIOR && entrada.valor>=beta){//si la branca havia estat podada perquè el rival tenia una jugada millor assegurada i si ara també té una jugada millor assegurada
+            node->valor=entrada.valor;
+            return entrada.valor; //tallem branca
+        }
+        if(entrada.tipus==TIPUS_COTA_SUPERIOR && entrada.valor<=alpha){//si el valor d'aquest node no supera l'alfa actual, la branca és inútil.
+            node->valor=entrada.valor;
+            return entrada.valor; //tallem branca
+        }
+    }
+
     if (nivell % 2==0){ //torn màquina
         double millor=-2000000;
         for (int i=0;i<node->n_fills;i++){
@@ -237,12 +311,29 @@ double avaluarMinimax(Node *node, int nivell, double alpha, double beta, int pro
         }
         node->valor=pitjor;
     }
+    //determinem el tipus que hem obtingut
+    int tipus;
+    if(node->valor<=alpha_original){
+        tipus=TIPUS_COTA_SUPERIOR;
+    }
+    else if(node->valor>=beta){
+        tipus=TIPUS_COTA_INFERIOR;
+    }
+    else tipus=TIPUS_EXACTE;
+    //sobreescribim a la taula de transposició només si l'analisis d'aquest torn és a més profunditat o la mateixa (d'aquesta manera renovem taulers antics i protegim anàlisis mes complets)
+    if (profunditatRestant>=taulaTransposicio[index].profunditat){
+        taulaTransposicio[index].hash=node->hash;
+        taulaTransposicio[index].profunditat=profunditatRestant;
+        taulaTransposicio[index].valor=node->valor;
+        taulaTransposicio[index].tipus=tipus;
+    }
     return node->valor;
 }
 
 int ferMinimax(char tauler[N][N], int profunditat_max){
     Node *arrel=malloc(sizeof(Node));
     copiarTauler(arrel->tauler, tauler);
+    arrel->hash=calcularHashTauler(arrel->tauler);
     arrel->n_fills=calcularNumeroDeFills(arrel->tauler);
     double millor=-2000000;
     double alpha=-2000000;
