@@ -5,7 +5,7 @@
 [![Memory](https://img.shields.io/badge/Memory-Zero%20Leaks-brightgreen.svg)]()
 [![Performance](https://img.shields.io/badge/Speedup-200x%20vs%20Naive-blueviolet.svg)]()
 
-A fast, memory-efficient **Connect-4 AI engine** built from scratch in **C99**. The engine plays on an expanded $8 \times 8$ board and searches up to **10 moves ahead in real-time (~1.5 s)** using **Alpha-Beta pruning**, **center-first move ordering**, **64-bit Zobrist Hashing with Transposition Tables**, and **gravity-aware heuristics**.
+A fast, memory-efficient **Connect-4 AI engine** built from scratch in **C99**. The engine plays on an expanded 8×8 board and searches up to **10 moves ahead in real-time (~1.5 s)** using **Alpha-Beta pruning**, **center-first move ordering**, **64-bit Zobrist Hashing with Transposition Tables**, and **gravity-aware heuristics**.
 
 ---
 
@@ -16,7 +16,7 @@ A fast, memory-efficient **Connect-4 AI engine** built from scratch in **C99**. 
 | **Depth 8 Search Time** | ~54.0 s | **0.268 s** (41k nodes) | **200x Speedup** via Alpha-Beta pruning & cache hits |
 | **Depth 10 Search Time** | > 3,600 s (1 hr) | **1.518 s** (334k nodes) | Real-time play looking 10 plies ahead |
 | **Peak Memory Footprint** | ~500 MB (Full tree) | **< 1 MB** | Ephemeral node lifecycle (allocates & frees on the fly) |
-| **Cache Lookup Speed** | Full board scan | **O(1) XOR lookup** | 64-bit Zobrist hash table ($2^{20}$ positions) |
+| **Cache Lookup Speed** | Full board scan | **O(1) XOR lookup** | 64-bit Zobrist hash table (2²⁰ positions) |
 
 ---
 
@@ -27,10 +27,12 @@ A fast, memory-efficient **Connect-4 AI engine** built from scratch in **C99**. 
 - Explores **central columns first** (`3, 4, 2, 5, 1, 6, 0, 7`). Because central positions offer more winning lines, the engine finds strong moves immediately and triggers fast cutoffs on up to **90% of sub-branches**.
 
 ### 2. Transposition Tables with 64-bit Zobrist Hashing
-- Many move sequences lead to the exact same board state (transpositions). Instead of recalculating them, the engine caches evaluated positions in a $2^{20}$ entry hash table (~1 million slots).
-- Board hashes update in $O(1)$ time per move using bitwise XOR ($\oplus$):
+- Many move sequences lead to the exact same board state (transpositions). Instead of recalculating them, the engine caches evaluated positions in a 2²⁰ entry hash table (~1 million slots).
+- Board hashes update in O(1) time per move using bitwise XOR ($\oplus$):
 
-  $$\text{hash}_{\text{child}} = \text{hash}_{\text{parent}} \oplus \text{Zobrist}[\text{row}][\text{col}][\text{piece}]$$
+$$
+\text{hash}_{\text{child}} = \text{hash}_{\text{parent}} \oplus \text{Zobrist}[\text{row}][\text{col}][\text{piece}]
+$$
 
 - Caches exact values as well as mathematical upper/lower bounds from cutoffs, replacing shallower analyses with deeper ones.
 
@@ -55,9 +57,9 @@ La màquina ha tirat a la columna 3
 
 ## Benchmark Comparison
 
-Measured on an $8 \times 8$ board (opening position, 8 available columns):
+Measured on an 8×8 board (opening position, 8 available columns):
 
-| Search Depth | Effective Plies | Naive Minimax (No Pruning) | Alpha-Beta (Standard) | Alpha-Beta + Move Ordering | Engine (Alpha-Beta + Move Ordering + TT)* | Speedup vs Naive |
+| Search Depth | Effective Plies | Naive Minimax (No Pruning) | Alpha-Beta (Standard) | Alpha-Beta + Move Ordering | Engine (Alpha-Beta + Move Ordering + TT) | Speedup vs Naive |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **2** | 1 AI / 1 Human | < 0.001 s (64 nodes) | < 0.001 s (40 nodes) | < 0.001 s (30 nodes) | **< 0.001 s** (30 nodes) | Baseline |
 | **4** | 2 AI / 2 Human | 0.015 s (4.1k nodes) | 0.006 s (1.5k nodes) | 0.002 s (820 nodes) | **< 0.001 s** (675 nodes) | **15x** |
@@ -65,7 +67,7 @@ Measured on an $8 \times 8$ board (opening position, 8 available columns):
 | **8** | 4 AI / 4 Human | ~54.0 s (16.7M nodes) | 1.850 s (520k nodes) | 0.450 s (80k nodes) | **0.268 s** (41.2k nodes) | **200x** |
 | **10** | 5 AI / 5 Human | > 3,600 s (1.07B nodes) | > 30 s (~8.5M nodes) | ~3.8 s (~950k nodes) | **1.518 s** (334.2k nodes) | **> 2,000x** |
 
-*\* Benchmark Note: Measured on an Intel Core i7 system running Windows 11 with GCC (`-O2`). Timings reflect an opening board state on an $8 \times 8$ grid. Naive Minimax timings for depths 8 and 10 are calculated from theoretical tree sizes ($8^8$ and $8^{10}$ nodes) at the engine's throughput (~310,000 nodes/sec).*
+> **Benchmark Note:** Measured on an Intel Core i7 system running Windows 11 with GCC (`-O2`). Timings reflect an opening board state on an 8×8 grid. Naive Minimax timings for depths 8 and 10 are calculated from theoretical tree sizes (8⁸ and 8¹⁰ nodes) at the engine's throughput (~310,000 nodes/sec).
 
 ---
 
