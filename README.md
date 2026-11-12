@@ -67,7 +67,7 @@ Measured on an 8×8 board (opening position, 8 available columns):
 | **8** | 4 AI / 4 Human | ~54.0 s (16.7M nodes) | 1.850 s (520k nodes) | 0.450 s (80k nodes) | **0.268 s** (41.2k nodes) | **200x** |
 | **10** | 5 AI / 5 Human | > 3,600 s (1.07B nodes) | > 30 s (~8.5M nodes) | ~3.8 s (~950k nodes) | **1.518 s** (334.2k nodes) | **> 2,000x** |
 
-> **Benchmark Note:** Measured on an Intel Core i7 system running Windows 11 with GCC (`-O2`). Timings reflect an opening board state on an 8×8 grid. Naive Minimax timings for depths 8 and 10 are calculated from theoretical tree sizes (8⁸ and 8¹⁰ nodes) at the engine's throughput (~310,000 nodes/sec).
+> **Benchmark Note:** Measured on an Intel Core i5-8265U system running Windows 11 with GCC (`-O2`). Timings reflect the initial AI counter-move (opening game phase with all 8 columns available, representing the computationally heaviest branch state). Naive Minimax timings for depths 8 to 12 are projected from theoretical tree sizes (8⁸ to 8¹² nodes) at the CPU's leaf evaluation throughput (~310,000 nodes/sec).
 
 ---
 
